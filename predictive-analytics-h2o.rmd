@@ -60,8 +60,15 @@ x <- setdiff(names(train), c(y,"ID"))
 ```{r}
 # Task 5: H2O AutoML Training
 
+aml <- h2o.automl(
+  x = x,
+  y = y,
+  training_frame = train,
+  max_runtime_secs = 600, #max_model = 20
+  balance_classes = TRUE
+)
 
-
+##Balance_class overestimates the minority sample or underestimate the majority sample
 
 
 
@@ -69,25 +76,28 @@ x <- setdiff(names(train), c(y,"ID"))
 
 ```{r}
 # Task 6: View AutoML Leaderboard
-
+lb <- aml@leaderboard
+print(lb, n = nrow(lb))
 
 
 ```
 
 ```{r}
 # 6.1 Ensemble Exploration ----
-
-
-
-
+model_ids <- as.data.frame(aml@leaderboard$model_id)[,1]
+se <- h2o.getModel(grep("StackedEnsemble_BestOfFamily", model_ids, value = TRUE)[1])
+metalearner <- h2o.getModel(se@model$metalearner$name)
+h2o.varimp(metalearner)
+h2o.varimp_plot(metalearner)
+##XGBoost is the most important in this model
 ```
 
 ```{r}
 # Task 7: Baselearner Variable Importance 
-
-
-
-
+xgb <- h2o.getModel(grep("XGBoost", model_ids, value = TRUE)[1])
+h2o.varimp(xgb)
+h2o.varimp_plot(xgb)
+##duration is the most important predictor
 ```
 
 
